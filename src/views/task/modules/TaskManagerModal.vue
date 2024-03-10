@@ -23,178 +23,104 @@
       <a-form :form="form">
         <a-row class="form-row" :gutter="24">
           <a-col :lg="6" :md="12" :sm="24">
-            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="客户" data-step="1" data-title="客户"
-                         data-intro="客户必须选择，如果发现需要选择的客户尚未录入，可以在下拉框中点击新增客户进行录入。
-                          特别注意，客户如果录入之后在下拉框中不显示，请检查是否给当前用户分配对应的客户权限">
-              <a-select placeholder="选择客户" v-decorator="[ 'organId', validatorRules.organId ]" :disabled="!rowCanEdit"
-                :dropdownMatchSelectWidth="false" showSearch optionFilterProp="children" @change="handleOrganChange">
-                <div slot="dropdownRender" slot-scope="menu">
-                  <v-nodes :vnodes="menu" />
-                  <a-divider style="margin: 4px 0;" />
-                  <div v-if="isTenant" style="padding: 4px 8px; cursor: pointer;"
-                       @mousedown="e => e.preventDefault()" @click="addCustomer"><a-icon type="plus" /> 新增客户</div>
-                </div>
-                <a-select-option v-for="(item,index) in cusList" :key="index" :value="item.id">
-                  {{ item.supplier }}
-                </a-select-option>
-              </a-select>
+            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="生产单号" data-step="1" data-title="生产单号"
+                         data-intro="">
+              <a-input placeholder="请输入生产单号" v-decorator.trim="[ 'produceNo' ]" :readOnly="true"/>
             </a-form-item>
           </a-col>
           <a-col :lg="6" :md="12" :sm="24">
-            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="单据日期">
-              <j-date v-decorator="['operTime', validatorRules.operTime]" :show-time="true"/>
+            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="商品条码" data-step="2" data-title="商品条码"
+              data-intro="">
+              <a-input-search placeholder="请选择商品条码" v-decorator="[ 'barCode' ]" @search="onSearchLinkNumber" :readOnly="true"/>
             </a-form-item>
           </a-col>
           <a-col :lg="6" :md="12" :sm="24">
-            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="单据编号" data-step="2" data-title="单据编号"
-                         data-intro="单据编号自动生成、自动累加、开头是单据类型的首字母缩写，累加的规则是每次打开页面会自动占用一个新的编号">
-              <a-input placeholder="请输入单据编号" v-decorator.trim="[ 'number' ]" :readOnly="true"/>
+            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="商品名称" data-step="3" data-title="商品名称"
+                         data-intro="">
+              <a-input placeholder="请输入商品名称" v-decorator.trim="[ 'goodsName' ]" :readOnly="true"/>
             </a-form-item>
           </a-col>
           <a-col :lg="6" :md="12" :sm="24">
-            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="关联订单" data-step="3" data-title="关联订单"
-              data-intro="销售出库单据可以通过关联订单来选择已录入的订单，选择之后会自动加载订单的内容，然后继续录入仓库等信息完成单据的提交，
-              提交之后原来的销售订单会对应的改变单据状态。另外本系统支持订单多次出库，只需选择订单之后修改对应的商品数量即可">
-              <a-input-search placeholder="请选择关联订单" v-decorator="[ 'linkNumber' ]" @search="onSearchLinkNumber" :readOnly="true"/>
+            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="计量单位" data-step="4" data-title="计量单位"
+                         data-intro="">
+              <a-input placeholder="请输入计量单位" v-decorator.trim="[ 'produceNo' ]" :readOnly="true"/>
             </a-form-item>
           </a-col>
+          <a-col :lg="6" :md="12" :sm="24">
+            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="订购数量" data-step="5" data-title="订购数量"
+                         data-intro="">
+              <a-input placeholder="请输入订购数量" v-decorator.trim="[ 'orderNumber' ]" />
+            </a-form-item>
+          </a-col>
+          <a-col :lg="6" :md="12" :sm="24">
+            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="计划完工">
+              <j-date v-decorator="['planFinishTimeStr', validatorRules.planFinishTimeStr]" :show-time="true"/>
+            </a-form-item>
+          </a-col>
+          <a-col :lg="6" :md="12" :sm="24">
+            <a-form-item :labelCol="labelCol" :wrapperCol="{xs: { span: 12},sm: { span: 12 }}" label="单据备注">
+              <a-textarea :rows="1" placeholder="请输入备注" v-decorator="[ 'remark' ]"/>
+            </a-form-item>
+          </a-col>
+          <a-col :lg="6" :md="12" :sm="24">
+            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="生产数量" data-step="8" data-title="生产数量"
+                         data-intro="">
+              <a-input placeholder="请输入生产数量" v-decorator.trim="[ 'produceNumber' ]" />
+            </a-form-item>
+          </a-col>
+          <div v-show="false">
+            <a-col :lg="6" :md="12" :sm="24">
+              <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="生产数量" data-step="8" data-title="生产数量"
+                          data-intro="">
+                <a-input placeholder="请输入生产数量" v-decorator.trim="[ 'number' ]" />
+              </a-form-item>
+            </a-col>
+            <a-col :lg="6" :md="12" :sm="24">
+              <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="生产数量" data-step="8" data-title="生产数量"
+                          data-intro="">
+                <a-input placeholder="请输入生产数量" v-decorator.trim="[ 'operTime' ]" />
+              </a-form-item>
+            </a-col>
+            <a-col :lg="6" :md="12" :sm="24">
+              <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="生产数量" data-step="8" data-title="生产数量"
+                          data-intro="">
+                <a-input placeholder="请输入生产数量" v-decorator.trim="[ 'accountId' ]" />
+              </a-form-item>
+            </a-col>
+          </div>
         </a-row>
-        <j-editable-table id="billModal"
-          :ref="refKeys[0]"
-          :loading="materialTable.loading"
-          :columns="materialTable.columns"
-          :dataSource="materialTable.dataSource"
-          :minWidth="minWidth"
-          :maxHeight="300"
-          :rowNumber="false"
-          :rowSelection="rowCanEdit"
-          :actionButton="rowCanEdit"
-          :dragSort="rowCanEdit"
-          @valueChange="onValueChange"
-          @added="onAdded"
-          @deleted="onDeleted">
-          <template #buttonAfter>
-            <a-row v-if="rowCanEdit" :gutter="24" style="float:left;padding-bottom: 5px;" data-step="4" data-title="扫码录入" data-intro="此功能支持扫码枪扫描商品条码进行录入">
-              <a-col v-if="scanStatus" :md="6" :sm="24">
-                <a-button @click="scanEnter">扫码录入</a-button>
-              </a-col>
-              <a-col v-if="!scanStatus" :md="16" :sm="24" style="padding: 0 8px 0 12px">
-                <a-input placeholder="请扫条码或序列号并回车" v-model="scanBarCode" @pressEnter="scanPressEnter" ref="scanBarCode"/>
-              </a-col>
-              <a-col v-if="!scanStatus" :md="6" :sm="24" style="padding: 0px 12px 0 0">
-                <a-button @click="stopScan">收起扫码</a-button>
-              </a-col>
-            </a-row>
-            <a-row :gutter="24" style="float:left;padding-bottom: 5px;">
-              <a-col :md="24" :sm="24">
-                <a-button style="margin-left: 8px" @click="handleHistoryBillList"><a-icon type="history" />历史单据</a-button>
-              </a-col>
-            </a-row>
-            <a-row v-if="rowCanEdit" :gutter="24" style="float:left;padding-bottom: 5px;padding-left:20px;">
-              <a-button icon="import" @click="onImport(prefixNo)">导入明细</a-button>
-            </a-row>
-          </template>
-          <template #depotBatchSet>
-            <a-icon type="down" @click="handleBatchSetDepot" />
-          </template>
-          <template #depotAdd>
-            <a-divider v-if="isTenant" style="margin: 4px 0;" />
-            <div v-if="isTenant" style="padding: 4px 8px; cursor: pointer;" @click="addDepot"><a-icon type="plus" /> 新增仓库</div>
-          </template>
-        </j-editable-table>
-        <a-row class="form-row" :gutter="24">
-          <a-col :lg="24" :md="24" :sm="24">
-            <a-form-item :labelCol="labelCol" :wrapperCol="{xs: { span: 24 },sm: { span: 24 }}" label="">
-              <a-textarea :rows="1" placeholder="请输入备注" v-decorator="[ 'remark' ]" style="margin-top:8px;"/>
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row class="form-row" :gutter="24">
-          <a-col :lg="6" :md="12" :sm="24">
-            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="优惠率" data-step="5" data-title="优惠率"
-                         data-intro="针对单据明细中商品总金额进行优惠的比例">
-              <a-input style="width:185px;" placeholder="请输入优惠率" v-decorator.trim="[ 'discount' ]" suffix="%" @change="onChangeDiscount"/>
-            </a-form-item>
-          </a-col>
-          <a-col :lg="6" :md="12" :sm="24">
-            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="收款优惠" data-step="6" data-title="收款优惠"
-                         data-intro="针对单据明细中商品总金额进行优惠的金额">
-              <a-input placeholder="请输入付款优惠" v-decorator.trim="[ 'discountMoney' ]" @change="onChangeDiscountMoney"/>
-            </a-form-item>
-          </a-col>
-          <a-col :lg="6" :md="12" :sm="24">
-            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="优惠后金额" data-step="7" data-title="优惠后金额"
-                         data-intro="针对单据明细中商品总金额进行优惠后的金额">
-              <a-input placeholder="请输入优惠后金额" v-decorator.trim="[ 'discountLastMoney' ]" :readOnly="true"/>
-            </a-form-item>
-          </a-col>
-          <a-col :lg="6" :md="12" :sm="24">
-            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="其它费用" data-step="8" data-title="其它费用"
-                         data-intro="比如快递费、油费、过路费">
-              <a-input placeholder="请输入其它费用" v-decorator.trim="[ 'otherMoney' ]" @change="onChangeOtherMoney"/>
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row class="form-row" :gutter="24">
-          <a-col :lg="6" :md="12" :sm="24">
-            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="结算账户" data-step="9" data-title="结算账户"
-                         data-intro="如果在下拉框中选择多账户，则可以通过多个结算账户进行结算">
-              <a-select style="width:185px;" placeholder="选择结算账户" v-decorator="[ 'accountId', validatorRules.accountId ]"
-                        :dropdownMatchSelectWidth="false" allowClear @select="selectAccount">
-                <div slot="dropdownRender" slot-scope="menu">
-                  <v-nodes :vnodes="menu" />
-                  <a-divider style="margin: 4px 0;" />
-                  <div v-if="isTenant" style="padding: 4px 8px; cursor: pointer;"
-                       @mousedown="e => e.preventDefault()" @click="addAccount"><a-icon type="plus" /> 新增结算账户</div>
-                </div>
-                <a-select-option v-for="(item,index) in accountList" :key="index" :value="item.id">
-                  {{ item.name }}
-                </a-select-option>
-              </a-select>
-              <a-tooltip title="多账户明细">
-                <a-button type="default" icon="folder" style="margin-left: 8px;" size="small" v-show="manyAccountBtnStatus" @click="handleManyAccount"/>
-              </a-tooltip>
-            </a-form-item>
-          </a-col>
-          <a-col v-if="depositStatus" :lg="6" :md="12" :sm="24">
-            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="扣除订金">
-              <a-input v-decorator.trim="[ 'deposit' ]" @change="onChangeDeposit"/>
-            </a-form-item>
-          </a-col>
-          <a-col :lg="6" :md="12" :sm="24">
-            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="本次收款">
-              <a-input placeholder="请输入本次收款" v-decorator.trim="[ 'changeAmount', validatorRules.changeAmount ]" @change="onChangeChangeAmount"/>
-            </a-form-item>
-          </a-col>
-          <a-col :lg="6" :md="12" :sm="24">
-            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="本次欠款" data-step="10" data-title="本次欠款"
-                         data-intro="欠款产生的费用，后续可以在收款单进行收取">
-              <a-input placeholder="请输入本次欠款" v-decorator.trim="[ 'debt', validatorRules.price ]" :readOnly="true"/>
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row class="form-row" :gutter="24">
-          <a-col :lg="6" :md="12" :sm="24">
-            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="销售人员" data-step="11" data-title="销售人员"
-                         data-intro="销售人员的数据来自【经手人管理】菜单中的销售员">
-              <j-select-multiple style="width:185px;" placeholder="请选择销售人员" v-model="personList.value" :options="personList.options"/>
-            </a-form-item>
-          </a-col>
-          <a-col :lg="6" :md="12" :sm="24">
-          </a-col>
-          <a-col :lg="6" :md="12" :sm="24">
-          </a-col>
-          <a-col :lg="6" :md="12" :sm="24">
-          </a-col>
-        </a-row>
-        <a-row class="form-row" :gutter="24">
-          <a-col :lg="6" :md="12" :sm="24">
-            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="附件" data-step="12" data-title="附件"
-                         data-intro="可以上传与单据相关的图片、文档，支持多个文件">
-              <j-upload v-model="fileList" bizPath="bill"></j-upload>
-            </a-form-item>
-          </a-col>
-        </a-row>
+        <a-tabs default-active-key="1">
+          <a-tab-pane key="1" tab="1、所需物料" forceRender>
+            <j-editable-table id="billModal"
+              :ref="refKeys[0]"
+              :loading="materialTable.loading"
+              :columns="materialTable.columns"
+              :dataSource="materialTable.dataSource"
+              :minWidth="minWidth"
+              :maxHeight="300"
+              :rowNumber="false"
+              :rowSelection="rowCanEdit"
+              :actionButton="rowCanEdit"
+              :dragSort="rowCanEdit"
+              @valueChange="onValueChange"
+              @added="onAdded"
+              @deleted="onDeleted">
+              <template #buttonAfter>
+                
+              </template>
+              <template #depotBatchSet>
+                <a-icon type="down" @click="handleBatchSetDepot" />
+              </template>
+              <template #depotAdd>
+                <a-divider v-if="isTenant" style="margin: 4px 0;" />
+                <div v-if="isTenant" style="padding: 4px 8px; cursor: pointer;" @click="addDepot"><a-icon type="plus" /> 新增仓库</div>
+              </template>
+            </j-editable-table>
+          </a-tab-pane>
+          <a-tab-pane key="2" tab="2、生产工序" forceRender>
+
+          </a-tab-pane>
+        </a-tabs>
       </a-form>
     </a-spin>
     <many-account-modal ref="manyAccountModalForm" @ok="manyAccountModalFormOk"></many-account-modal>
@@ -277,9 +203,9 @@
           loading: false,
           dataSource: [],
           columns: [
-            { title: '仓库名称', key: 'depotId', width: '8%', type: FormTypes.select, placeholder: '请选择${title}', options: [],
-              allowSearch:true, validateRules: [{ required: true, message: '${title}不能为空' }]
-            },
+            // { title: '仓库名称', key: 'depotId', width: '8%', type: FormTypes.select, placeholder: '请选择${title}', options: [],
+            //   allowSearch:true, validateRules: [{ required: true, message: '${title}不能为空' }]
+            // },
             { title: '条码', key: 'barCode', width: '12%', type: FormTypes.popupJsh, kind: 'material', multi: true,
               validateRules: [{ required: true, message: '${title}不能为空' }]
             },
