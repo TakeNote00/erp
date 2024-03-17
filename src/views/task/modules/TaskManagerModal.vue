@@ -43,7 +43,7 @@
           <a-col :lg="6" :md="12" :sm="24">
             <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="计量单位" data-step="4" data-title="计量单位"
                          data-intro="">
-              <a-input placeholder="请输入计量单位" v-decorator.trim="[ 'produceNo' ]" :readOnly="true"/>
+              <a-input placeholder="请输入计量单位" v-decorator.trim="[ 'unit' ]" :readOnly="true"/>
             </a-form-item>
           </a-col>
           <a-col :lg="6" :md="12" :sm="24">
@@ -167,6 +167,7 @@
     <batch-set-depot ref="batchSetDepotModalForm" @ok="batchSetDepotModalFormOk"></batch-set-depot>
     <history-bill-list ref="historyBillListModalForm"></history-bill-list>
     <workflow-iframe ref="modalWorkflow"></workflow-iframe>
+    <j-select-material-modal ref="selectModal" @ok="selectModalOK" />
 
     <!-- 新增工序 -->
     <a-modal v-model="taskProcessVisible" title="新增">
@@ -185,7 +186,15 @@
         </a-form-item>
         <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="负责人员" data-step="2" data-title="负责人员"
                          data-intro="">
-          <a-input placeholder="请输入负责人员" v-decorator.trim="[ 'userId' ]" />
+          <a-select v-decorator.trim="[ 'userId' ]" placeholder="请输入负责人员">
+            <a-select-option
+              v-for="(item,index) in productionProcessTable.columns[2].options"
+              :key="index"
+              :value="item.value">
+              {{ item.text || item.label }}
+            </a-select-option>
+          </a-select>
+          <!-- <a-input placeholder="请输入负责人员" v-decorator.trim="[ 'userId' ]" /> -->
         </a-form-item>
         <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="父工序" data-step="3" data-title="父工序"
                          data-intro="">
@@ -197,11 +206,11 @@
         </a-form-item>
         <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="计划完工日期" data-step="5" data-title="计划完工日期"
                          data-intro="">
-          <a-input placeholder="请输入计划完工日期" v-decorator.trim="[ 'planOverTime' ]" />
+          <j-date v-decorator="['planOverTime', validatorRules.planFinishTimeStr]" :show-time="true"/>
         </a-form-item>
         <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="备注" data-step="6" data-title="备注"
                          data-intro="">
-          <a-input placeholder="请输入备注" v-decorator.trim="[ 'remark' ]" />
+          <a-textarea placeholder="请输入备注" v-decorator.trim="[ 'remark' ]" />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -229,6 +238,8 @@
   import { VALIDATE_NO_PASSED, getRefPromise, validateFormAndTables } from '@/utils/JEditableTableUtil'
   import { httpAction } from '@/api/manage'
   import {addDepot,editDepot,checkDepot,getUserList } from '@/api/api'
+  import JSelectMaterialModal from '../../../components/jeecgbiz/modal/JSelectMaterialModal'
+
   
   export default {
     name: "TaskManagerModal",
@@ -246,6 +257,7 @@
       JUpload,
       JDate,
       JSelectMultiple,
+      JSelectMaterialModal,
       VNodes: {
         functional: true,
         render: (h, ctx) => ctx.props.vnodes,
@@ -608,8 +620,17 @@
         this.$refs.historyBillListModalForm.disableSubmit = false;
       },
       onSearchLinkNumber() {
-        this.$refs.linkBillList.show('其它', '销售订单', '客户', "1,3")
-        this.$refs.linkBillList.title = "选择销售订单"
+        // this.$refs.linkBillList.show('其它', '销售订单', '客户', "1,3")
+        // this.$refs.linkBillList.title = "选择销售订单"
+        this.$refs.selectModal.showModal('')
+      },
+      selectModalOK(rows, id) {
+        console.log(rows, id, '选择');
+        this.form.setFieldsValue({
+          barCode: id,
+          goodsName: rows[0].name,
+          unit: rows[0].unit,
+        })
       },
       linkBillListOk(selectBillDetailRows, linkNumber, organId, discountMoney, deposit, remark, depotId) {
         let that = this
