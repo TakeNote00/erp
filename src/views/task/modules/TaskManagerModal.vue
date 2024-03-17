@@ -60,7 +60,7 @@
           </a-col>
           <a-col :lg="6" :md="12" :sm="24">
             <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="计划完工">
-              <j-date v-decorator="['planFinishTimeStr', validatorRules.planFinishTimeStr]" :show-time="true"/>
+              <j-date  dateFormat='YYYY-MM-DD' v-decorator="['planFinishTimeStr', validatorRules.planFinishTimeStr]" :show-time="true"/>
             </a-form-item>
           </a-col>
           <a-col :lg="6" :md="12" :sm="24">
@@ -156,10 +156,16 @@
             </div>
             
             <a-table
+              v-if="tableData && tableData.length"
               :columns="tableColumns"
               :data-source="tableData"
               :row-selection="rowSelection"
-            />
+              :defaultExpandAllRows="true"
+            >
+              <span slot="userId" slot-scope="userId">{{getUserName(userId)}}</span>
+              <span slot="parentProcesses" slot-scope="id">{{getProcessName(id)}}</span>
+              <span slot="beforeProcesses" slot-scope="id">{{getProcessNames(id)}}</span>
+            </a-table>
           </a-tab-pane>
         </a-tabs>
       </a-form>
@@ -204,15 +210,31 @@
         </a-form-item>
         <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="父工序" data-step="3" data-title="父工序"
                          data-intro="">
-          <a-input placeholder="请输入父工序" v-decorator.trim="[ 'parentProcesses' ]" />
+          <a-select v-decorator.trim="[ 'parentProcesses' ]" placeholder="请选择父工序">
+            <a-select-option
+              v-for="(item,index) in processList"
+              :key="index"
+              :value="item.value">
+              {{ item.text || item.label }}
+            </a-select-option>
+          </a-select>
+          <!-- <a-input placeholder="请输入父工序" v-decorator.trim="[ 'parentProcesses' ]" /> -->
         </a-form-item>
         <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="前序工序" data-step="4" data-title="前序工序"
                          data-intro="">
-          <a-input placeholder="请输入前序工序" v-decorator.trim="[ 'beforeProcesses' ]" />
+          <a-select mode="multiple" v-decorator.trim="[ 'beforeProcesses', validatorRules.beforeProcesses ]" placeholder="请选择前序工序">
+            <a-select-option
+              v-for="(item,index) in processList"
+              :key="index"
+              :value="item.value">
+              {{ item.text || item.label }}
+            </a-select-option>
+          </a-select>
+          <!-- <a-input placeholder="请输入前序工序" v-decorator.trim="[ 'beforeProcesses' ]" /> -->
         </a-form-item>
         <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="计划完工日期" data-step="5" data-title="计划完工日期"
                          data-intro="">
-          <j-date v-decorator="['planOverTime', validatorRules.planFinishTimeStr]" :show-time="true"/>
+          <j-date dateFormat='YYYY-MM-DD' v-decorator="['planOverTime', validatorRules.planFinishTimeStr]" :show-time="true"/>
         </a-form-item>
         <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="备注" data-step="6" data-title="备注"
                          data-intro="">
@@ -236,7 +258,7 @@
   import { FormTypes } from '@/utils/JEditableTableUtil'
   import { JEditableTableMixin } from '@/mixins/JEditableTableMixin'
   import { BillModalMixin } from '../../bill/mixins/BillModalMixin'
-  import { getMpListShort,handleIntroJs } from "@/utils/util"
+  import { getMpListShort,handleIntroJs,cloneObject } from "@/utils/util"
   import JSelectMultiple from '@/components/jeecg/JSelectMultiple'
   import JUpload from '@/components/jeecg/JUpload'
   import JDate from '@/components/jeecg/JDate'
@@ -271,13 +293,14 @@
     },
     data () {
       return {
+        processList: [], // 任务工序
         tableColumns: [
-          {title: '工序名称',dataIndex: 'processesName'},
-          {title: '负责人员',dataIndex: 'userId'},
-          {title: '父工序',dataIndex: 'parentProcesses'},
-          {title: '前序工序',dataIndex: 'beforeProcesses'},
-          {title: '计划完工日期',dataIndex: 'planOverTime'},
-          {title: '备注',dataIndex: 'remark'},
+          {title: '工序名称',dataIndex: 'processesName', key: 'processesName'},
+          {title: '负责人员',dataIndex: 'userId', key: 'userId', scopedSlots: { customRender: 'userId' },},
+          {title: '父工序',dataIndex: 'parentProcesses', key: 'parentProcesses', scopedSlots: { customRender: 'parentProcesses' }},
+          {title: '前序工序',dataIndex: 'beforeProcesses', key: 'beforeProcesses', scopedSlots: { customRender: 'beforeProcesses' }},
+          {title: '计划完工日期',dataIndex: 'planOverTime', key: 'planOverTime'},
+          {title: '备注',dataIndex: 'remark', key: 'remark'},
         ],
         tableData: [],
         rowSelection: {
@@ -359,6 +382,10 @@
         },
         confirmLoading: false,
         validatorRules:{
+          beforeProcesses: {
+            // rules: [{ required: true, message: '请输入XXX！' }],
+            initialValue: []
+          },
           operTime:{
             rules: [
               { required: true, message: '请输入单据日期！' }
@@ -392,12 +419,53 @@
       this.initUser()
     },
     methods: {
+      getUserName(id) {
+        return this.productionProcessTable.columns[2].options.find(item => item.value == id).text
+      },
+      getProcessName(id) {
+        if (id) {
+          console.log(this.processList, id ,'this.processList');
+          return this.processList.length > 0 && this.processList.find(item => item.id == id).text || ''
+        }
+      },
+      getProcessNames(id) {
+        console.log(id, 'id');
+        if (id) {
+          console.log(this.processList, id ,'this.processList');
+          return this.processList.length > 0 && this.processList.find(item => item.id == id).text || ''
+        }
+      },
+      // 任务工序获取
+      getTaskProcesses() {
+        let url = '/taskProcesses/getListByPage'
+        let data = {
+          "pageNo": 1, 
+          "pageSize": 999, 
+          "taskId": this.model.id 
+        }
+        httpAction(url, data, 'post').then((res) => {
+          if(res.code === 200){
+            let process = res.data.data.records
+            console.log(process, 'process');
+            process.forEach((item) => {
+              item.value = item.id
+              item.text = item.processesName
+            })
+            this.processList = process
+            console.log(this.processList, 'this.processList');
+          }
+        })
+      },
       onSelectChange(selectedRowKeys) {
 
         console.log('selectedRowKeys changed: ', selectedRowKeys);
         this.rowSelection.selectedRowKeys = selectedRowKeys;
       },
       handleAddPorcess() {
+        if (!this.form.getFieldValue('barCode')) {
+          this.$message.warning('请先选择商品条码');
+          return
+        }
         this.taskProcessVisible = true
         let url = this.url.add, method = 'post'
         if (!this.model.id) {
@@ -407,8 +475,11 @@
             console.log(res, 'res');
             if(res.code === 200){
               this.model.id = res.data.data.id
+              this.getTaskProcesses()
             }
           })
+        } else {
+          this.getTaskProcesses()
         }
       },
       handleDelPorcess() {
@@ -430,24 +501,38 @@
           if (!err) {
             console.log('Received values of form: ', values);
             values.taskId = this.model.id
-            setTimeout(() => {
-              httpAction('/taskProcesses/insertTaskProcesses', values, 'post').then((res) => {
+            values.beforeProcesses = values.beforeProcesses.join(',')
+            httpAction('/taskProcesses/insertTaskProcesses', values, 'post').then((res) => {
+              if (res.code === 200) {
                 console.log(res, 'res');
-              })
-              // this.tableData.push(values)
-              // this.taskProcessVisible = false;
-              // this.taskProcessLoading = false;
-              // this.$nextTick(() => {
-              //   this.taskProcessForm.setFieldsValue({
-              //     "processesName": "", 
-              //     "parentProcesses": "", 
-              //     "beforeProcesses": "", 
-              //     "planOverTime": "", 
-              //     "userId": "", 
-              //     "remark": "" 
-              //   })
-              // });
-            }, 2000);
+                res.data.data.key = res.data.data.id
+                if (res.data.data.parentProcesses) { // 存在父节点
+                  let newTableData = cloneObject(this.tableData)
+                  const target = newTableData.find((item) => item.id === res.data.data.parentProcesses);
+                  if (target) {
+                    target.children = target.children || [];
+                    target.children.push(res.data.data);
+                  }
+                  this.tableData = newTableData
+                  this.$forceUpdate(); // 调用该方法即可强制更新页面
+                } else {
+                  this.tableData.push(res.data.data)
+                }
+                console.log(this.tableData, 'this.tableData');
+                this.taskProcessVisible = false;
+                this.taskProcessLoading = false;
+                this.$nextTick(() => {
+                  this.taskProcessForm.setFieldsValue({
+                    "processesName": "", 
+                    "parentProcesses": "", 
+                    "beforeProcesses": [], 
+                    "planOverTime": "", 
+                    "userId": "", 
+                    "remark": "" 
+                  })
+                });
+              }
+            })
           }
         });
         
@@ -512,9 +597,18 @@
           taskMaterialList: [],
           taskProcessesList: []
         }
-        obj.taskProcessesList = this.tableData
-        console.log(allValues, 'allValues');
+        obj.taskProcessesList = this.flatten(this.tableData)
+        console.log(obj, 'allValues');
         return obj
+      },
+      flatten(data) {
+        return [].concat(...data.map(item => {
+          let arr = []
+          if (item.children) {
+            arr = this.flatten(item.children)
+          }
+          return [].concat(item, ...arr)
+        }))
       },
       /** 发起请求，自动判断是执行新增还是修改操作 */
     httpRequest(formData) {
@@ -522,6 +616,7 @@
       if (this.model.id) {
         url = this.url.edit
         method = 'put'
+        formData.id = this.model.id
       }
       this.confirmLoading = true
       httpAction(url, formData, method).then((res) => {

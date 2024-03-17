@@ -134,13 +134,14 @@
             :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
             @change="handleTableChange">
             <span slot="action" slot-scope="text, record">
-              <a @click="myHandleDetail(record, '销售出库', prefixNo)">查看</a>
-              <a-divider v-if="btnEnableList.indexOf(1)>-1" type="vertical" />
-              <a v-if="btnEnableList.indexOf(1)>-1" @click="myHandleEdit(record)">编辑</a>
-              <a-divider v-if="btnEnableList.indexOf(1)>-1" type="vertical" />
+              <!-- <a @click="myHandleDetail(record, '销售出库', prefixNo)">查看</a> -->
+              <a @click="handleOpenProcess(record)">查看</a>
+              <a-divider v-if="btnEnableList.indexOf(1)==-1" type="vertical" />
+              <a v-if="btnEnableList.indexOf(1)==-1" @click="myHandleEdit(record)">编辑</a>
+              <a-divider v-if="btnEnableList.indexOf(1)==-1" type="vertical" />
               <a v-if="btnEnableList.indexOf(1)>-1" @click="myHandleCopyAdd(record)">复制</a>
               <a-divider v-if="btnEnableList.indexOf(1)>-1" type="vertical" />
-              <a-popconfirm v-if="btnEnableList.indexOf(1)>-1" title="确定删除吗?" @confirm="() => myHandleDelete(record)">
+              <a-popconfirm v-if="btnEnableList.indexOf(1)==-1" title="确定删除吗?" @confirm="() => myHandleDelete(record)">
                 <a>删除</a>
               </a-popconfirm>
             </span>
@@ -262,6 +263,11 @@
       this.initAccount()
     },
     methods: {
+      // 查看任务详情
+      handleOpenProcess(record) {
+        console.log(record, 'record');
+        this.$refs.showTaskManager.showModal(record.id)
+      },
       // 计划完工时间格式化
       onCompleteDateChange(value, dateString) {
         this.queryParam.planBeginTime = dateString[0];
