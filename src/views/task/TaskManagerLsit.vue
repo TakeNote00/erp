@@ -245,7 +245,7 @@
           list: "/task/list",
           delete: "/task/deleteByIds",
           deleteBatch: "/task/deleteByIds",
-          // batchSetStatusUrl: "/depotHead/batchSetStatus"
+          batchSetStatusUrl: "/task/updateTask"
         }
       }
     },
