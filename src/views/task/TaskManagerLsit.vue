@@ -167,12 +167,14 @@
         <task-manager-modal ref="modalForm" @ok="modalFormOk" @close="modalFormClose"></task-manager-modal>
         <bill-detail ref="modalDetail" @ok="modalFormOk" @close="modalFormClose"></bill-detail>
         <bill-excel-iframe ref="billExcelIframe" @ok="modalFormOk" @close="modalFormClose"></bill-excel-iframe>
+        <show-task-manager ref="showTaskManager" @ok="modalFormOk" @close="modalFormClose"></show-task-manager>
       </a-card>
     </a-col>
   </a-row>
 </template>
 <script>
   import TaskManagerModal from './modules/TaskManagerModal.vue'
+  import ShowTaskManager from './modules/ShowTaskManager.vue'
   import BillDetail from '../bill/dialog/BillDetail'
   import BillExcelIframe from '@/components/tools/BillExcelIframe'
   import { JeecgListMixin } from '@/mixins/JeecgListMixin'
@@ -188,7 +190,8 @@
       BillDetail,
       BillExcelIframe,
       JEllipsis,
-      JDate
+      JDate,
+      ShowTaskManager
     },
     data () {
       return {

@@ -22,10 +22,16 @@
     <a-spin :spinning="confirmLoading">
       <a-form :form="form">
         <a-row class="form-row" :gutter="24">
+          <a-col :lg="6" :md="12" :sm="24" v-show="false">
+            <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="生产单号" data-step="1" data-title="生产单号"
+                         data-intro="">
+              <a-input placeholder="请输入生产单号" v-decorator.trim="[ 'materialId' ]" :readOnly="true"/>
+            </a-form-item>
+          </a-col>
           <a-col :lg="6" :md="12" :sm="24">
             <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="生产单号" data-step="1" data-title="生产单号"
                          data-intro="">
-              <a-input placeholder="请输入生产单号" v-decorator.trim="[ 'produceNo' ]" :readOnly="true"/>
+              <a-input placeholder="请输入生产单号" v-decorator.trim="[ 'number' ]" :readOnly="true"/>
             </a-form-item>
           </a-col>
           <a-col :lg="6" :md="12" :sm="24">
@@ -288,7 +294,7 @@
         addDefaultRowNum: 1,
         visible: false,
         operTimeStr: '',
-        prefixNo: 'XSCK',
+        prefixNo: 'SC',
         depositStatus: false,
         fileList:[],
         rowCanEdit: true,
@@ -331,19 +337,19 @@
             { title: '名称', key: 'name', width: '10%', type: FormTypes.normal },
             { title: '颜色', key: 'color', width: '5%', type: FormTypes.normal },
             { title: '扩展信息', key: 'materialOther', width: '5%', type: FormTypes.normal },
-            { title: '库存', key: 'stock', width: '5%', type: FormTypes.normal },
-            { title: '单位', key: 'unit', width: '4%', type: FormTypes.normal },
+            { title: '库存', key: 'stock', width: '8%', type: FormTypes.normal },
+            { title: '单位', key: 'unit', width: '8%', type: FormTypes.normal },
             { title: '序列号', key: 'snList', width: '12%', type: FormTypes.popupJsh, kind: 'sn', multi: true },
             { title: '批号', key: 'batchNumber', width: '7%', type: FormTypes.popupJsh, kind: 'batch', multi: false },
             { title: '有效期', key: 'expirationDate',width: '7%', type: FormTypes.input, readonly: true },
             { title: '多属性', key: 'sku', width: '9%', type: FormTypes.normal },
             { title: '原数量', key: 'preNumber', width: '4%', type: FormTypes.normal },
             { title: '已出库', key: 'finishNumber', width: '4%', type: FormTypes.normal },
-            { title: '数量', key: 'operNumber', width: '4%', type: FormTypes.inputNumber, statistics: true,
+            { title: '数量', key: 'operNumber', width: '8%', type: FormTypes.inputNumber, statistics: true,
               validateRules: [{ required: true, message: '${title}不能为空' }]
             },
-            { title: '单价', key: 'unitPrice', width: '4%', type: FormTypes.inputNumber},
-            { title: '金额', key: 'allPrice', width: '5%', type: FormTypes.inputNumber, statistics: true },
+            // { title: '单价', key: 'unitPrice', width: '4%', type: FormTypes.inputNumber},
+            // { title: '金额', key: 'allPrice', width: '5%', type: FormTypes.inputNumber, statistics: true },
             // { title: '税率', key: 'taxRate', width: '4%', type: FormTypes.inputNumber,placeholder: '%'},
             // { title: '税额', key: 'taxMoney', width: '5%', type: FormTypes.inputNumber, readonly: true, statistics: true },
             // { title: '价税合计', key: 'taxLastMoney', width: '7%', type: FormTypes.inputNumber, statistics: true },
@@ -393,6 +399,17 @@
       },
       handleAddPorcess() {
         this.taskProcessVisible = true
+        let url = this.url.add, method = 'post'
+        if (!this.model.id) {
+          let data = this.form.getFieldsValue()
+          console.log(data, 'formData');
+          httpAction(url, {billNo: data.number, materialId: data.materialId}, method).then((res) => {
+            console.log(res, 'res');
+            if(res.code === 200){
+              this.model.id = res.data.data.id
+            }
+          })
+        }
       },
       handleDelPorcess() {
         this.rowSelection.selectedRowKeys.map((item) => {
@@ -412,20 +429,24 @@
         this.taskProcessForm.validateFields((err, values) => {
           if (!err) {
             console.log('Received values of form: ', values);
+            values.taskId = this.model.id
             setTimeout(() => {
-              this.tableData.push(values)
-              this.taskProcessVisible = false;
-              this.taskProcessLoading = false;
-              this.$nextTick(() => {
-                this.taskProcessForm.setFieldsValue({
-                  "processesName": "", 
-                  "parentProcesses": "", 
-                  "beforeProcesses": "", 
-                  "planOverTime": "", 
-                  "userId": "", 
-                  "remark": "" 
-                })
-              });
+              httpAction('/taskProcesses/insertTaskProcesses', values, 'post').then((res) => {
+                console.log(res, 'res');
+              })
+              // this.tableData.push(values)
+              // this.taskProcessVisible = false;
+              // this.taskProcessLoading = false;
+              // this.$nextTick(() => {
+              //   this.taskProcessForm.setFieldsValue({
+              //     "processesName": "", 
+              //     "parentProcesses": "", 
+              //     "beforeProcesses": "", 
+              //     "planOverTime": "", 
+              //     "userId": "", 
+              //     "remark": "" 
+              //   })
+              // });
             }, 2000);
           }
         });
@@ -481,8 +502,9 @@
       // 表单验证
       classifyFormData(allValues) {
         let obj = {
-          "billNo": "1111111", 
-          "materialId": 621, 
+          "billNo": allValues.formValue.number, 
+          "barCode":allValues.formValue.barCode,
+          "materialId": allValues.formValue.materialId, 
           "planOverTime": allValues.formValue.planFinishTimeStr, 
           "quantity": allValues.formValue.produceNumber, 
           "overQquantity": allValues.formValue.orderNumber, 
@@ -630,6 +652,7 @@
           barCode: id,
           goodsName: rows[0].name,
           unit: rows[0].unit,
+          materialId: rows[0].materialId
         })
       },
       linkBillListOk(selectBillDetailRows, linkNumber, organId, discountMoney, deposit, remark, depotId) {
