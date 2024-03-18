@@ -20,7 +20,7 @@
         完工
       </a-button>
     </div>
-    <a-form layout="inline" @keyup.enter.native="taskSearchQuery">
+    <a-form layout="inline">
       <a-row :gutter="24">
         <a-col :md="6" :sm="24">
           <a-form-item label="生产单号">
@@ -120,32 +120,114 @@
             :data-source="table1"
             :row-selection="rowSelection"
           >
+            <template slot="operation" slot-scope="text, record">
+              <div :style="{display: 'flex',marginBottom: '10px'}">
+                <a-button type="link"  @click="handleGetMaterial(record)" :style="{marginRight: '10px'}">
+                  领料
+                </a-button>
+                <a-button type="link"  @click="handleBackMaterial(record)" :style="{marginRight: '10px'}">
+                  退料
+                </a-button>
+                <a-button type="link" @click="handleUseMaterial(record)">
+                  用料
+                </a-button>
+              </div>
+            </template>
           </a-table>
         </a-tab-pane>
-        <a-tab-pane key="2" tab="1、生产工序" forceRender>
+        <a-tab-pane key="2" tab="2、生产工序" forceRender>
           <a-table
             :columns="columns2"
             :data-source="table2"
           >
           </a-table>
         </a-tab-pane>
-        <a-tab-pane key="3" tab="1、验收记录" forceRender>
+        <a-tab-pane key="3" tab="3、验收记录" forceRender>
           <a-table
             :columns="columns3"
             :data-source="table3"
           >
+          
           </a-table>
         </a-tab-pane>
     </a-tabs>
 
     <task-report ref="reportRef"></task-report>
     <insert-task ref="InsertRef"></insert-task>
+
+    <!-- 领料，用料，退料 -->
+    <a-modal v-model="materialVisible" :title="materialTitle" :width="800">
+      <template slot="footer">
+        <a-button key="back" @click="handleMaterialVisibleCancel">
+          取消
+        </a-button>
+        <a-button key="submit" type="primary" @click="handleMaterialVisibleClick">
+          确认
+        </a-button>
+      </template>
+      <a-form :form="materialForm" :label-col="labelCol" :wrapper-col="wrapperCol">
+        <a-form-item label="物料条码" data-step="1" data-title="物料条码"
+                      data-intro="">
+          <div>{{ materialRow.barCode }}</div>
+        </a-form-item>
+        <a-form-item label="物料名称" data-step="2" data-title="物料名称"
+                      data-intro="">
+          <div>{{ materialRow.name }}</div>
+        </a-form-item>
+        <div v-if="materialType == 0">
+          <a-form-item label="物料仓库" data-step="3" data-title="物料仓库"
+                      data-intro="">
+          <a-select placeholder="选择仓库" v-decorator.trim="[ 'depotId' ]"
+              :dropdownMatchSelectWidth="false" showSearch optionFilterProp="children" allow-clear>
+              <a-select-option v-for="(item,index) in depotList" :key="index" :value="item.id">
+                {{ item.depotName }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item label="当前库存" data-step="4" data-title="当前库存"
+                          data-intro="">
+            <a-input placeholder="请输入当前库存" v-decorator.trim="[ 'bb' ]" :readOnly="true" />
+          </a-form-item>
+          <a-form-item label="本次领料" data-step="5" data-title="本次领料"
+                          data-intro="">
+            <a-input placeholder="请输入本次领料" v-decorator.trim="[ 'getMaterial' ]" />
+          </a-form-item>
+          <a-form-item label="领料单位" data-step="6" data-title="领料单位"
+                          data-intro="">
+            <a-input placeholder="请输入领料单位" v-decorator.trim="[ 'unit' ]" :readOnly="true" />
+          </a-form-item>
+          <a-form-item label="成本单价" data-step="7" data-title="成本单价"
+                          data-intro="">
+            <a-input placeholder="请输入成本单价" v-decorator.trim="[ 'aa' ]" :readOnly="true" />
+          </a-form-item>
+        </div>
+        <div v-if="materialType == 2">
+          <a-form-item label="可用数量" data-step="1" data-title="可用数量"
+                          data-intro="">
+            <a-input placeholder="请输入可用数量" v-decorator.trim="[ 'number' ]" :readOnly="true" />
+          </a-form-item>
+          <a-form-item label="本次用料" data-step="2" data-title="本次用料"
+                          data-intro="">
+            <a-input placeholder="请输入本次用料" v-decorator.trim="[ 'useNumber' ]" />
+          </a-form-item>
+          <a-form-item label="本次废料" data-step="3" data-title="本次废料"
+                          data-intro="">
+            <a-input placeholder="请输入本次废料" v-decorator.trim="[ 'lostNumber' ]" />
+          </a-form-item>
+          <a-form-item label="单位" data-step="4" data-title="单位"
+                          data-intro="">
+            <a-input placeholder="请输入单位" v-decorator.trim="[ 'unit' ]" :readOnly="true" />
+          </a-form-item>
+        </div>
+      </a-form>
+    </a-modal>
   </a-modal>
 </template>
 <script>
   import Vue from 'vue'
   import TaskReport from "./TaskReport.vue"
   import InsertTask from './InsertTask.vue'
+  import { httpAction } from '../../../api/manage'
   // import { httpAction } from '@/api/manage'
   export default {
     name: "ShowTaskManager",
@@ -155,25 +237,33 @@
     },
     data () {
       return {
+        labelCol: {
+          xs: { span: 24 },
+          sm: { span: 5 },
+        },
+        wrapperCol: {
+          xs: { span: 24 },
+          sm: { span: 12 },
+        },
         rowSelection: {
           selectedRowKeys: [], 
           onChange: this.onSelectChange
         },
         columns1: [
-          {title: '操作',dataIndex: 'processesName', key: 'processesName'},
-          {title: '条码',dataIndex: 'processesName', key: 'processesName'},
-          {title: '名称',dataIndex: 'processesName', key: 'processesName'},
-          {title: '规格',dataIndex: 'processesName', key: 'processesName'},
-          {title: '型号',dataIndex: 'processesName', key: 'processesName'},
-          {title: '库存',dataIndex: 'processesName', key: 'processesName'},
-          {title: '单位',dataIndex: 'processesName', key: 'processesName'},
-          {title: '多属性',dataIndex: 'processesName', key: 'processesName'},
-          {title: '数量',dataIndex: 'processesName', key: 'processesName'},
-          {title: '领料数',dataIndex: 'processesName', key: 'processesName'},
-          {title: '已退数',dataIndex: 'processesName', key: 'processesName'},
-          {title: '已用数',dataIndex: 'processesName', key: 'processesName'},
-          {title: '报废数',dataIndex: 'processesName', key: 'processesName'},
-          {title: '备注',dataIndex: 'processesName', key: 'processesName'},
+          {title: '操作',dataIndex: 'operation', key: 'operation',scopedSlots: { customRender: 'operation' },},
+          {title: '条码',dataIndex: 'barCode', key: 'barCode'},
+          // {title: '名称',dataIndex: 'processesName', key: 'processesName'},
+          // {title: '规格',dataIndex: 'processesName', key: 'processesName'},
+          // {title: '型号',dataIndex: 'processesName', key: 'processesName'},
+          // {title: '库存',dataIndex: 'materialHasNumber', key: 'materialHasNumber'},
+          // {title: '单位',dataIndex: 'processesName', key: 'processesName'},
+          // {title: '多属性',dataIndex: 'processesName', key: 'processesName'},
+          {title: '数量',dataIndex: 'materialHasNumber', key: 'materialHasNumber'},
+          {title: '领料数',dataIndex: 'materialGetNumber', key: 'materialGetNumber'},
+          {title: '已退数',dataIndex: 'materialReturnNumber', key: 'materialReturnNumber'},
+          {title: '已用数',dataIndex: 'materialUseNumber', key: 'materialUseNumber'},
+          {title: '报废数',dataIndex: 'materialLostNumber', key: 'materialLostNumber'},
+          {title: '备注',dataIndex: 'remark', key: 'remark'},
         ],
         table1: [],
         columns2: [
@@ -199,14 +289,127 @@
         visible: false,
         loading: false,
         taskId: '', // 任务id
+        materialRow: {},
+        materialVisible: false,
+        materialTitle: '',
+        materialType: 0, // 0领料 1退料 2用料
+        materialForm: this.$form.createForm(this)
       }
     },
     computed: {
     },
     created() {
-
+      
+    },
+    watch: {
+      visible() {
+        if (this.visible) {
+          this.getMaterial()
+          this.getTaskReport()
+        }
+      },
     },
     methods: {
+      // 领料
+      handleGetMaterial(row) {
+        this.materialType = 0
+        this.materialTitle = '领料【自动生成其它出库单】'
+        this.materialRow = row
+        this.materialForm.setFieldsValue({barCode: row.barCode})
+        this.$nextTick(() => {
+          this.materialVisible = true
+        })
+      },
+      // 退料
+      handleBackMaterial(row) {
+        this.materialType = 1
+        this.materialTitle = '退料【自动生成其它入库单】'
+        this.materialRow = row
+        this.materialForm.setFieldsValue({barCode: row.barCode})
+        this.$nextTick(() => {
+          this.materialVisible = true
+        })
+        
+      },
+      // 用料
+      handleUseMaterial(row) {
+        this.materialType = 2
+        this.materialTitle = '用料'
+        this.materialRow = row
+        this.materialForm.setFieldsValue({barCode: row.barCode})
+        this.$nextTick(() => {
+          this.materialVisible = true
+        })
+        
+      },
+      handleMaterialVisibleCancel() {
+        this.materialVisible = false
+        this.materialForm.resetFields() // 重置表单
+      },
+      handleMaterialVisibleClick() {
+        this.materialForm.validateFields((err, values) => {
+          if (!err) {
+            console.log('Received values of form: ', values);
+            console.log('Received values of form: ', this.materialRow);
+            // 领料
+            if (this.materialType == 0) {
+              let data = {
+                  "taskMaterialList": [
+                      {
+                        "id": this.materialRow.id || '',
+                        "materialEntity": {
+                            "unit": this.materialRow.unit
+                        }
+                      }
+                  ], //领料的材料id
+                  "depotId": values.depotId, //仓库id
+                  "taskId": this.taskId,
+                  "getMaterial": values.getMaterial
+              }
+              httpAction('/taskMaterial/getMaterial', data, 'post').then((res) => {
+                if(res.code === 200){
+                  this.materialVisible = false
+                  this.$message.info('领料成功')
+                  this.materialForm.resetFields() // 重置表单
+                }
+              })
+            }
+            // 退料
+            if (this.materialType == 1) {
+              
+            }
+            // 用料
+            if (this.materialType == 2) {
+              let data = {
+                "taskMaterialId": this.materialRow.id, 
+                "useNumber": values.useNumber, 
+                "lostNumber": values.lostNumber 
+              }
+              httpAction('/taskMaterial/useMaterialByNumber', data, 'post').then((res) => {
+                if(res.code === 200){
+                  this.materialVisible = false
+                  this.$message.info('用料成功')
+                  this.materialForm.resetFields() // 重置表单
+                }
+              })
+            }
+          }
+        });
+        
+      },
+      // 获取物料表格数据
+      getMaterial() {
+        let data = {
+          "pageNo": 1, 
+          "pageSize": 100, 
+          "taskId": this.taskId 
+        }
+        httpAction('/taskMaterial/getListByPage', data, 'post').then((res) => {
+          if(res.code === 200){
+            this.table1 = res.data.data.records
+          }
+        })
+      },
       // 验收
       handleReport() {
         this.$refs.reportRef.showModal(this.taskId)
@@ -214,6 +417,26 @@
       // 入库
       handleInsert() {
         this.$refs.InsertRef.showModal(this.taskId)
+      },
+      // 完工
+      handleComplete() {
+        this.$confirm({
+        title: '确认完工',
+        content: h => <div style="">完工后如要修改需操作重新加工，确定完工吗？</div>,
+        onOk() {
+          console.log('OK');
+          httpAction('/task/overTask', {taskId: this.taskId}, 'post').then((res) => {
+            if(res.code === 200){
+              this.$message.info('任务完工');
+              this.visible = false
+            }
+          })
+        },
+        onCancel() {
+          console.log('Cancel');
+        },
+        class: 'test',
+      });
       },
       onSelectChange(selectedRowKeys) {
         console.log('selectedRowKeys changed: ', selectedRowKeys);
@@ -229,6 +452,20 @@
       },
       handleCancel() {
         this.visible = false
+      },
+      // 验收记录
+      getTaskReport() {
+        let data = {
+          "taskId": this.taskId, 
+          "processesId": null, 
+          "pageNo": 1, 
+          "pageSize": 100
+        }
+        httpAction('/taskReport/getListByPage', data, 'post').then((res) => {
+            if(res.code === 200){
+              this.tab3 = res.data.data.records
+            }
+          })
       },
     }
   }
