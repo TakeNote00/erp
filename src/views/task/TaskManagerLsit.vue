@@ -266,7 +266,7 @@
       // 查看任务详情
       handleOpenProcess(record) {
         console.log(record, 'record');
-        this.$refs.showTaskManager.showModal(record.id)
+        this.$refs.showTaskManager.showModal(record.id, this.depotList)
       },
       // 计划完工时间格式化
       onCompleteDateChange(value, dateString) {

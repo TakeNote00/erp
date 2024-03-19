@@ -104,10 +104,10 @@
     <a-tabs default-active-key="1">
         <a-tab-pane key="1" tab="1、所需物料" forceRender>
           <div :style="{display: 'flex',width: '20%',marginBottom: '10px'}">
-            <a-button  @click="handleCancel" :style="{marginRight: '10px'}">
+            <a-button  @click="getMaterialBatch" :style="{marginRight: '10px'}">
               批量领料
             </a-button>
-            <a-button  @click="handleClick" :style="{marginRight: '10px'}">
+            <a-button  @click="useMaterialBatch" :style="{marginRight: '10px'}">
               批量用料
             </a-button>
             <a-button @click="handleClick">
@@ -153,7 +153,7 @@
     </a-tabs>
 
     <task-report ref="reportRef"></task-report>
-    <insert-task ref="InsertRef"></insert-task>
+    <insert-task ref="InsertRef" :depotList="depotList"></insert-task>
 
     <!-- 领料，用料，退料 -->
     <a-modal v-model="materialVisible" :title="materialTitle" :width="800">
@@ -219,7 +219,62 @@
             <a-input placeholder="请输入单位" v-decorator.trim="[ 'unit' ]" :readOnly="true" />
           </a-form-item>
         </div>
+        <div v-if="materialType == 1">
+          <a-form-item label="退料仓库" data-step="3" data-title="退料仓库"
+                      data-intro="">
+          <a-select placeholder="选择仓库" v-decorator.trim="[ 'depotId' ]"
+              :dropdownMatchSelectWidth="false" showSearch optionFilterProp="children" allow-clear>
+              <a-select-option v-for="(item,index) in depotList" :key="index" :value="item.id">
+                {{ item.depotName }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item label="当前库存" data-step="4" data-title="当前库存"
+                          data-intro="">
+            <a-input placeholder="请输入当前库存" v-decorator.trim="[ 'bb' ]" :readOnly="true" />
+          </a-form-item>
+          <a-form-item label="可退数量" data-step="4" data-title="可退数量"
+                          data-intro="">
+            <a-input placeholder="请输入可退数量" v-decorator.trim="[ 'cc' ]" :readOnly="true" />
+          </a-form-item>
+          <a-form-item label="本次退料" data-step="5" data-title="本退领料"
+                          data-intro="">
+            <a-input placeholder="请输入本次退料" v-decorator.trim="[ 'operNumber' ]" />
+          </a-form-item>
+          <a-form-item label="退料单位" data-step="6" data-title="退料单位"
+                          data-intro="">
+            <a-input placeholder="请输入退料单位" v-decorator.trim="[ 'unit' ]" :readOnly="true" />
+          </a-form-item>
+          <a-form-item label="成本单价" data-step="7" data-title="成本单价"
+                          data-intro="">
+            <a-input placeholder="请输入成本单价" v-decorator.trim="[ 'aa' ]" :readOnly="true" />
+          </a-form-item>
+        </div>
       </a-form>
+    </a-modal>
+
+    <!-- 批量领料 -->
+    <a-modal v-model="getMaterialVisible" title="批量领料【自动生成其它出库单】" :width="400">
+      <template slot="footer">
+        <a-button key="back" @click="() => getMaterialVisible = false">
+          取消
+        </a-button>
+        <a-button key="submit" type="primary" @click="handleGetMaterialBatch">
+          确认
+        </a-button>
+      </template>
+      <a-form :form="materialForm" :label-col="labelCol" :wrapper-col="wrapperCol">
+        <a-form-item label="领料仓库" data-step="1" data-title="领料仓库"
+                  data-intro="">
+          <a-select placeholder="选择仓库" v-decorator.trim="[ 'depotId' ]"
+              :dropdownMatchSelectWidth="false" showSearch optionFilterProp="children" allow-clear>
+              <a-select-option v-for="(item,index) in depotList" :key="index" :value="item.id">
+                {{ item.depotName }}
+              </a-select-option>
+            </a-select>
+        </a-form-item>
+      </a-form>
+      
     </a-modal>
   </a-modal>
 </template>
@@ -237,6 +292,7 @@
     },
     data () {
       return {
+        depotList: [],
         labelCol: {
           xs: { span: 24 },
           sm: { span: 5 },
@@ -247,6 +303,7 @@
         },
         rowSelection: {
           selectedRowKeys: [], 
+          selectedRows: [],
           onChange: this.onSelectChange
         },
         columns1: [
@@ -265,7 +322,7 @@
           {title: '报废数',dataIndex: 'materialLostNumber', key: 'materialLostNumber'},
           {title: '备注',dataIndex: 'remark', key: 'remark'},
         ],
-        table1: [],
+        table1: [{id: '123213', barCode: '1001'}],
         columns2: [
           {title: '操作',dataIndex: 'processesName', key: 'processesName'},
           {title: '查看',dataIndex: 'processesName', key: 'processesName'},
@@ -293,7 +350,8 @@
         materialVisible: false,
         materialTitle: '',
         materialType: 0, // 0领料 1退料 2用料
-        materialForm: this.$form.createForm(this)
+        materialForm: this.$form.createForm(this),
+        getMaterialVisible: false
       }
     },
     computed: {
@@ -304,12 +362,63 @@
     watch: {
       visible() {
         if (this.visible) {
-          this.getMaterial()
+          // this.getMaterial()
           this.getTaskReport()
         }
       },
     },
     methods: {
+      // 确定批量领料
+      handleGetMaterialBatch() {
+        let data = {
+          taskMaterialList: this.rowSelection.selectedRows,
+          depotId: this.materialForm.getFieldValue(depotId),
+          taskId: this.taskId
+        }
+        httpAction('/taskMaterial/getMaterial', data, 'post').then((res) => {
+          if(res.code === 200){
+            this.getMaterialVisible = false
+          }
+        })
+      },
+      // 批量领料
+      getMaterialBatch() {
+        if (this.rowSelection.selectedRowKeys.length === 0) {
+          this.$message.info('请选择一条记录')
+        } else {
+          this.getMaterialVisible = true
+        }
+      },
+      // 批量用料
+      useMaterialBatch() {
+        if (this.rowSelection.selectedRowKeys.length === 0) {
+          this.$message.info('请选择一条记录')
+          
+        } else {
+          let that = this
+          this.$confirm({
+            title: '确认批量用料',
+            content: h => <div style="">此操作执行完不可修改，确定要批量用料吗？</div>,
+            onOk() {
+              console.log('OK');
+              let ids = []
+              that.rowSelection.selectedRows.map((item) => {
+                ids.push(item.id)
+              })
+              console.log(that.rowSelection.selectedRows, 'selectedRows');
+              httpAction('/taskMaterial/useMaterial', ids, 'post').then((res) => {
+                if(res.code === 200){
+                  this.visible = false
+                }
+              })
+            },
+            onCancel() {
+              console.log('Cancel');
+            },
+            class: 'test',
+          });
+        }
+      },
       // 领料
       handleGetMaterial(row) {
         this.materialType = 0
@@ -376,7 +485,20 @@
             }
             // 退料
             if (this.materialType == 1) {
-              
+              let data = {
+                "depotId": values.depotId, //仓库id
+                "taskId": this.taskId,
+                "barCode": values.barCode,
+                "unit": this.materialRow.unit,
+                "operNumber": values.operNumber, 
+              }
+              httpAction('/task/warehousingProduct', data, 'post').then((res) => {
+                if(res.code === 200){
+                  this.materialVisible = false
+                  this.$message.info('退料成功')
+                  this.materialForm.resetFields() // 重置表单
+                }
+              })
             }
             // 用料
             if (this.materialType == 2) {
@@ -421,28 +543,30 @@
       // 完工
       handleComplete() {
         this.$confirm({
-        title: '确认完工',
-        content: h => <div style="">完工后如要修改需操作重新加工，确定完工吗？</div>,
-        onOk() {
-          console.log('OK');
-          httpAction('/task/overTask', {taskId: this.taskId}, 'post').then((res) => {
-            if(res.code === 200){
-              this.$message.info('任务完工');
-              this.visible = false
-            }
-          })
-        },
-        onCancel() {
-          console.log('Cancel');
-        },
-        class: 'test',
-      });
+          title: '确认完工',
+          content: h => <div style="">完工后如要修改需操作重新加工，确定完工吗？</div>,
+          onOk() {
+            console.log('OK');
+            httpAction('/task/overTask', {taskId: this.taskId}, 'post').then((res) => {
+              if(res.code === 200){
+                this.$message.info('任务完工');
+                this.visible = false
+              }
+            })
+          },
+          onCancel() {
+            console.log('Cancel');
+          },
+          class: 'test',
+        });
       },
-      onSelectChange(selectedRowKeys) {
+      onSelectChange(selectedRowKeys, selectedRows) {
         console.log('selectedRowKeys changed: ', selectedRowKeys);
         this.rowSelection.selectedRowKeys = selectedRowKeys;
+        this.rowSelection.selectedRows = selectedRows;
       },
-      showModal(id) {
+      showModal(id, depotList) {
+        this.depotList = depotList
         this.visible = true
         this.taskId = id
       },

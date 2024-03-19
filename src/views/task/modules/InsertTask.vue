@@ -13,59 +13,60 @@
     <a-form :form="form">
       <a-row :gutter="24">
         <a-col :span="12">
-          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="生产单号" data-step="1" data-title="生产单号"
+          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="商品条码" data-step="1" data-title="商品条码"
                       data-intro="">
-          <a-input placeholder="请输入生产单号" v-decorator.trim="[ 'materialId' ]" :readOnly="true"/>
         </a-form-item>
         </a-col>
         <a-col :span="12">
-          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="生产单号" data-step="1" data-title="生产单号"
+          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="商品名称" data-step="1" data-title="商品名称"
                       data-intro="">
-          <a-input placeholder="请输入生产单号" v-decorator.trim="[ 'materialId' ]" :readOnly="true"/>
-        </a-form-item>
-        </a-col>
-      </a-row>
-      <a-row :gutter="24">
-        <a-col :span="12">
-          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="生产单号" data-step="1" data-title="生产单号"
-                      data-intro="">
-          <a-input placeholder="请输入生产单号" v-decorator.trim="[ 'materialId' ]" :readOnly="true"/>
-        </a-form-item>
-        </a-col>
-        <a-col :span="12">
-          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="生产单号" data-step="1" data-title="生产单号"
-                      data-intro="">
-          <a-input placeholder="请输入生产单号" v-decorator.trim="[ 'materialId' ]" :readOnly="true"/>
-        </a-form-item>
-        </a-col>
-      </a-row>
-       <a-row :gutter="24">
-        <a-col :span="12">
-          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="生产单号" data-step="1" data-title="生产单号"
-                      data-intro="">
-          <a-input placeholder="请输入生产单号" v-decorator.trim="[ 'materialId' ]" :readOnly="true"/>
         </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="24">
         <a-col :span="12">
-          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="生产单号" data-step="1" data-title="生产单号"
+          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="成本单价" data-step="1" data-title="成本单价"
                       data-intro="">
-          <a-input placeholder="请输入生产单号" v-decorator.trim="[ 'materialId' ]" :readOnly="true"/>
         </a-form-item>
         </a-col>
         <a-col :span="12">
-          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="生产单号" data-step="1" data-title="生产单号"
+          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="计量单位" data-step="1" data-title="计量单位"
                       data-intro="">
-          <a-input placeholder="请输入生产单号" v-decorator.trim="[ 'materialId' ]" :readOnly="true"/>
         </a-form-item>
         </a-col>
       </a-row>
        <a-row :gutter="24">
         <a-col :span="12">
-          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="生产单号" data-step="1" data-title="生产单号"
+          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="当前库存" data-step="1" data-title="当前库存"
                       data-intro="">
-          <a-input placeholder="请输入生产单号" v-decorator.trim="[ 'materialId' ]" :readOnly="true"/>
+          <a-input placeholder="请输入当前库存" v-decorator.trim="[ 'materialId' ]" :readOnly="true"/>
+        </a-form-item>
+        </a-col>
+      </a-row>
+      <a-row :gutter="24">
+        <a-col :span="12">
+          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="入库仓库" data-step="3" data-title="入库仓库"
+                      data-intro="">
+          <a-select placeholder="选择入库仓库" v-decorator.trim="[ 'depotId' ]"
+              :dropdownMatchSelectWidth="false" showSearch optionFilterProp="children" allow-clear>
+              <a-select-option v-for="(item,index) in depotList" :key="index" :value="item.id">
+                {{ item.depotName }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+        </a-col>
+        <a-col :span="12">
+          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="本次入库" data-step="1" data-title="本次入库"
+                      data-intro="">
+          <a-input placeholder="本次入库" v-decorator.trim="[ 'materialId' ]" />
+        </a-form-item>
+        </a-col>
+      </a-row>
+       <a-row :gutter="24">
+        <a-col :span="12">
+          <a-form-item :labelCol="labelCol" :wrapperCol="wrapperCol" label="备注" data-step="1" data-title="备注"
+                      data-intro="">
+          <a-input placeholder="请输入备注" v-decorator.trim="[ 'remark' ]" />
         </a-form-item>
         </a-col>
       </a-row>
@@ -81,6 +82,12 @@
     name: "InsertTask",
     components: {
 
+    },
+    props: {
+      depotList: {
+        type: Array,
+        default: () => []
+      }
     },
     data () {
       return {
